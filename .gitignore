@@ -102,3 +102,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+.DS_Store
+hadoop-base/hadoop-2.9.2
