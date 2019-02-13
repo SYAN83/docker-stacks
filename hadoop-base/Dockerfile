@@ -1,4 +1,4 @@
-# Copyright (c) IBM Corporation 2016 
+# Copyright NYC Data Science Academy
 # Distributed under the terms of the MIT License.
 
 # Hadoop distribution
@@ -20,10 +20,8 @@ RUN	apt update \
   	 ssh \
   	 rsync \
   	 sudo \
-  	 ca-certificates \
   	 vim \
   	 wget \
-  	 locales \
      git \
      figlet \
   && rm -rf /var/lib/apt/lists/*
@@ -87,6 +85,6 @@ EXPOSE 19888
 # Jupyter notebook Port
 EXPOSE 8888
 
-COPY start.sh /usr/local/bin/
-ENTRYPOINT start.sh; bash
+COPY start-hadoop.sh /usr/local/bin/
+ENTRYPOINT start-hadoop.sh; bash
 
