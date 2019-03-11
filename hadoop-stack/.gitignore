@@ -1,0 +1,8 @@
+apache-hive-2.3.4-bin/
+apache-tez-0.9.1-src/
+protobuf-2.5.0/
+pig-0.17.0/
+.DS_Store
+*.class
+nohup.out
+wc.jar

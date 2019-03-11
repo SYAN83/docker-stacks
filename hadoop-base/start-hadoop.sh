@@ -7,9 +7,14 @@ sed -i "/export JAVA_HOME=/c\JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64" $HADOO
 # start hdfs
 $HADOOP_HDFS_HOME/sbin/start-dfs.sh
 # create HDFS directory
-$HADOOP_HDFS_HOME/bin/hdfs dfs -mkdir /user \
-&& $HADOOP_HDFS_HOME/bin/hdfs dfs -mkdir /user/hadoop \
-&& $HADOOP_HDFS_HOME/bin/hdfs dfs -chown hadoop:hadoop /user/hadoop
+if ! $($HADOOP_HDFS_HOME/bin/hdfs dfs -test -d /user) ; then
+    echo "Creating hadoop directory"
+    $HADOOP_HDFS_HOME/bin/hdfs dfs -mkdir /user
+fi
+if ! $($HADOOP_HDFS_HOME/bin/hdfs dfs -test -d /user/hadoop) ; then
+    $HADOOP_HDFS_HOME/bin/hdfs dfs -mkdir /user/hadoop
+    $HADOOP_HDFS_HOME/bin/hdfs dfs -chown hadoop:hadoop /user/hadoop
+fi
 # start yarn
 $HADOOP_YARN_HOME/sbin/yarn-daemon.sh start resourcemanager
 $HADOOP_YARN_HOME/sbin/yarn-daemon.sh start nodemanager
@@ -18,7 +23,8 @@ $HADOOP_MAPRED_HOME/sbin/mr-jobhistory-daemon.sh start historyserver
 # welcome screen
 echo
 figlet -f slant Hadoop Base
-echo 
+echo "                                Powered By NYC Data Science Academy"
+echo
 cat /etc/lsb-release | grep DISTRIB_DESCRIPTION | cut -d \" -f2
 hadoop version | head -n 1
 echo

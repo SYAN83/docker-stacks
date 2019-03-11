@@ -1,8 +1,7 @@
-
 # Copyright NYC Data Science Academy
 # Distributed under the terms of the MIT License.
 
-FROM nycdsa/hadoop-base:0.2
+FROM nycdsa/hadoop-stack:0.3
 
 ARG NB_USER="hadoop"
 ARG NB_UID="1000"
@@ -52,10 +51,13 @@ RUN cd /tmp && \
     conda clean -tipsy && \
     rm -rf /home/$NB_USER/.cache/yarn
 
+
+
 # Install Tini
 RUN conda install --quiet --yes 'tini=0.18.0' && \
     conda list tini | grep tini | tr -s ' ' | cut -d ' ' -f 1,2 >> $CONDA_DIR/conda-meta/pinned && \
     conda clean -tipsy
+
 
 # Install Jupyter Notebook, Lab, and Hub
 # Generate a notebook server config
@@ -74,22 +76,26 @@ RUN conda install --quiet --yes \
     rm -rf $CONDA_DIR/share/jupyter/lab/staging && \
     rm -rf /home/$NB_USER/.cache/yarn
 
+# Install extra packages
+RUN conda install -c conda-forge 'mrjob=0.6.7'
+
+# Setup python symbolic
+RUN ln -s $(which python) /usr/bin/python
+RUN ln -s $(which python3) /usr/bin/python3
+
 EXPOSE 8888
 WORKDIR $HOME
+USER $NB_USER
+
+RUN sudo chown -R $NB_USER:$NB_USER $HOME
 
 # Configure container startup
 ENTRYPOINT ["tini", "-g", "--"]
 CMD ["start-notebook.sh"]
 
-USER $NB_UID
 
 # Add local files as late as possible to avoid cache busting
 COPY start.sh /usr/local/bin/
 COPY start-notebook.sh /usr/local/bin/
 COPY start-singleuser.sh /usr/local/bin/
 COPY jupyter_notebook_config.py /etc/jupyter/
-
-
-
-
-

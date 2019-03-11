@@ -8,7 +8,7 @@ ARG HADOOP_DISTRIBUTION=hadoop-2.9.2
 FROM ubuntu:18.10
 
 LABEL maintainer="Shu Yan <yanshu.usc@gmail.com>"
-LABEL description="This image sets up a single-node hadoop cluster in pseudo-distributed mode where each Hadoop daemon runs in a separate Java process"
+LABEL description="This image sets up a single-node hadoop cluster in pseudo-distributed mode"
 
 USER root
 
@@ -82,9 +82,10 @@ EXPOSE 50030
 EXPOSE 50060
 # MapReduce JobHistory Server
 EXPOSE 19888
-# Jupyter notebook Port
-EXPOSE 8888
+
 
 COPY start-hadoop.sh /usr/local/bin/
+COPY stop-hadoop.sh /usr/local/bin/
+
 ENTRYPOINT start-hadoop.sh; bash
 
