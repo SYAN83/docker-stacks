@@ -3,13 +3,12 @@
 
 FROM nycdsa/hadoop-stack:0.3
 
-ARG NB_USER="hadoop"
-ARG NB_UID="1000"
-ARG NB_GID="100"
+ARG NB_USER="jovyan"
+ARG NB_UID="1001"
+ARG NB_GID="1001"
 
 USER root
 
-RUN adduser hadoop users
 
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt update && apt -yq dist-upgrade \
@@ -36,11 +35,30 @@ ENV PATH=$CONDA_DIR/bin:$PATH \
     HOME=/home/$NB_USER
 
 
+# Enable prompt color in the skeleton .bashrc before creating the default NB_USER
+# RUN sed -i 's/^#force_color_prompt=yes/force_color_prompt=yes/' /etc/skel/.bashrc
+
+# Create NB_USER wtih name jovyan user with UID=1001 and in the 'users' group
+# and make sure these dirs are writable by the `users` group.
+RUN groupadd wheel -g 11 && \
+    echo "auth required pam_wheel.so use_uid" >> /etc/pam.d/su && \
+    useradd -m -s /bin/bash -N -u $NB_UID $NB_USER && \
+    mkdir -p $CONDA_DIR && \
+    chown $NB_USER:$NB_GID $CONDA_DIR
+
+RUN adduser $NB_USER sudo
+RUN adduser $NB_USER hadoop
+
+USER $NB_UID
+
+
 # Install conda as jovyan and check the md5 sum provided on the download site
-ENV MINICONDA_VERSION 4.5.11
+ENV MINICONDA_VERSION=4.5.12 \
+    CONDA_VERSION=4.6.7
+
 RUN cd /tmp && \
     wget --quiet https://repo.continuum.io/miniconda/Miniconda3-${MINICONDA_VERSION}-Linux-x86_64.sh && \
-    echo "e1045ee415162f944b6aebfe560b8fee *Miniconda3-${MINICONDA_VERSION}-Linux-x86_64.sh" | md5sum -c - && \
+#     echo "e1045ee415162f944b6aebfe560b8fee *Miniconda3-${MINICONDA_VERSION}-Linux-x86_64.sh" | md5sum -c - && \
     /bin/bash Miniconda3-${MINICONDA_VERSION}-Linux-x86_64.sh -f -b -p $CONDA_DIR && \
     rm Miniconda3-${MINICONDA_VERSION}-Linux-x86_64.sh && \
     $CONDA_DIR/bin/conda config --system --prepend channels conda-forge && \
@@ -62,7 +80,6 @@ RUN conda install --quiet --yes 'tini=0.18.0' && \
 # Install Jupyter Notebook, Lab, and Hub
 # Generate a notebook server config
 # Cleanup temporary files
-# Correct permissions
 # Do all this in a single RUN command to avoid duplicating all of the
 # files across image layers when the permissions change
 RUN conda install --quiet --yes \
@@ -79,15 +96,17 @@ RUN conda install --quiet --yes \
 # Install extra packages
 RUN conda install -c conda-forge 'mrjob=0.6.7'
 
+
+USER root
+
 # Setup python symbolic
 RUN ln -s $(which python) /usr/bin/python
 RUN ln -s $(which python3) /usr/bin/python3
 
 EXPOSE 8888
 WORKDIR $HOME
-USER $NB_USER
 
-RUN sudo chown -R $NB_USER:$NB_USER $HOME
+RUN sudo chown -R $NB_USER:$NB_GID $HOME
 
 # Configure container startup
 ENTRYPOINT ["tini", "-g", "--"]
@@ -99,3 +118,5 @@ COPY start.sh /usr/local/bin/
 COPY start-notebook.sh /usr/local/bin/
 COPY start-singleuser.sh /usr/local/bin/
 COPY jupyter_notebook_config.py /etc/jupyter/
+
+USER $NB_UID
